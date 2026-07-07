@@ -7,6 +7,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to cut (e.g. v1.0). Leave blank to only build the APK artifact without publishing a release."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -41,11 +46,20 @@ jobs:
 
       - name: Determine version name
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
+          # A tag push, or a manual run with a version, publishes a release.
+          # A manual run with no version only builds the APK artifact.
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "${INPUT_VERSION}" ]; then
+            echo "name=${INPUT_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
           else
             echo "name=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Sign APK
@@ -102,8 +116,11 @@ jobs:
           if-no-files-found: error
 
       - name: Publish GitHub Release
-        if: github.ref_type == 'tag'
+        # Runs for tag pushes and for manual runs that supplied a version. When
+        # the tag doesn't exist yet the action creates it at the built commit.
+        if: steps.version.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.name }}
           files: ${{ steps.sign.outputs.apk }}
           generate_release_notes: true

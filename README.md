@@ -52,9 +52,14 @@ emulator.
 ### Prebuilt APKs (GitHub Actions)
 
 The [`Release APK`](.github/workflows/release.yml) workflow builds a signed,
-installable APK. Push a version tag (e.g. `git tag v1.0 && git push --tags`) to
-publish it as a GitHub Release asset, or trigger the workflow manually from the
-**Actions** tab to download it as a build artifact.
+installable APK. There are two ways to cut a release:
+
+- **From the Actions tab:** run the *Release APK* workflow manually and enter a
+  `version` (e.g. `v1.0`). The workflow builds, signs, **creates the tag**, and
+  publishes it as a GitHub Release — no local tag push needed. Leave `version`
+  blank to just build the APK and download it as a run artifact.
+- **By pushing a tag:** `git tag v1.0 && git push --tags` triggers the same
+  build-sign-publish flow.
 
 By default the workflow signs with a fresh self-signed key each run — installable,
 but you must uninstall a previous build before installing a newer one. To sign
