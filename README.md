@@ -11,17 +11,26 @@ picker. There is no network code.
 ## Features
 
 - Read SMS from the system content provider (`Telephony.Sms`) with the
-  `READ_SMS` runtime permission, off the main thread.
-- Preview messages in a scrollable list (address, direction, timestamp, body).
+  `READ_SMS` runtime permission, off the main thread. Every message box is read
+  — inbox, sent, draft, outbox, and importantly **failed / queued** — so texts
+  that never sent (e.g. notes typed to a number that won't deliver) are backed
+  up too.
+- **Grouped by conversation**, like a messaging app: the main screen lists
+  threads (contact/number, latest message, message count, and an "unsent" badge
+  when a thread contains failed/queued/outbox messages). Tap a conversation to
+  see it as chat bubbles, with unsent messages clearly marked.
+- The load status shows a per-type breakdown (e.g. `received 300, sent 38,
+  failed 4`) so you can confirm the unsent messages were captured.
 - Export to **JSON**, **CSV**, or **HTML**:
   - **JSON** — an object with `exported_at`, `count`, and a `messages` array;
     ISO-8601 timestamps.
   - **CSV** — RFC-4180 quoting, header row, `body` column last.
   - **HTML** — a single self-contained, chat-style page grouped by thread,
     with light/dark support via `prefers-color-scheme`.
-- Saves through the Storage Access Framework, so **no storage permission** is
-  needed and you choose the destination. Suggested filename:
-  `textport-YYYY-MM-DD.<ext>`.
+- Export **everything** or a **single conversation** (from that conversation's
+  screen). Saves through the Storage Access Framework, so **no storage
+  permission** is needed and you choose the destination. Suggested filenames:
+  `textport-YYYY-MM-DD.<ext>` or `textport-<contact>-YYYY-MM-DD.<ext>`.
 
 ## Tech stack
 
@@ -75,11 +84,15 @@ a clear message and reads nothing. Grant it and tap **Load messages** again.
 
 ## Scope
 
-**SMS only.** Textport reads plain text messages from the SMS provider. It does
-**not** read:
+**SMS only.** Textport reads plain text messages from the SMS provider —
+including failed, queued, outbox and draft messages. It does **not** read:
 
 - **MMS** (picture/group messages) — different provider and structure.
 - **RCS** (Google Messages "chat features") — not exposed to third-party apps.
+  Note: if RCS is on, an unsent message you typed may be held in the messaging
+  app's private RCS store rather than the SMS provider, in which case no
+  third-party app (including Textport) can read it. A message that actually
+  *failed to send as SMS* lands in the SMS provider and is captured.
 - **iMessage / other chat apps** — not on Android.
 
 **iOS is intentionally out of scope:** Apple provides no API for apps to read the
