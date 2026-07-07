@@ -44,6 +44,21 @@ enum class ExportFormat(
 
     abstract fun exporter(): Exporter
 
-    /** Suggested filename such as `textport-2026-07-07.json`. */
-    fun suggestedFileName(datePart: String): String = "textport-$datePart.$extension"
+    /**
+     * Suggested filename such as `textport-2026-07-07.json`, or
+     * `textport-+15550001111-2026-07-07.csv` when exporting a single
+     * conversation. [label] is sanitized to filename-safe characters.
+     */
+    fun suggestedFileName(datePart: String, label: String? = null): String {
+        val safeLabel = label
+            ?.replace(Regex("[^A-Za-z0-9._+-]"), "_")
+            ?.trim('_')
+            ?.take(40)
+            ?.takeIf { it.isNotEmpty() }
+        return if (safeLabel == null) {
+            "textport-$datePart.$extension"
+        } else {
+            "textport-$safeLabel-$datePart.$extension"
+        }
+    }
 }
