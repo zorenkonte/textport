@@ -17,6 +17,7 @@ class CsvExporter : Exporter {
                 sb,
                 listOf(
                     m.id.toString(),
+                    if (m.isMms) "mms" else "sms",
                     m.address,
                     isoTimestamp(m.date),
                     m.type.label,
@@ -42,6 +43,7 @@ class CsvExporter : Exporter {
     }
 
     private companion object {
-        val HEADER = listOf("id", "address", "date", "type", "thread_id", "read", "body")
+        val HEADER =
+            listOf("id", "kind", "address", "date", "type", "thread_id", "read", "body")
     }
 }

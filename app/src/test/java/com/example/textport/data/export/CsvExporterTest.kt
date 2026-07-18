@@ -13,7 +13,7 @@ class CsvExporterTest {
     @Test
     fun `header row is present and body is last column`() {
         val lines = exporter.export(ExporterTestData.messages).split("\r\n")
-        assertEquals("id,address,date,type,thread_id,read,body", lines[0])
+        assertEquals("id,kind,address,date,type,thread_id,read,body", lines[0])
     }
 
     @Test
@@ -38,7 +38,25 @@ class CsvExporterTest {
             ),
         )
         val row = exporter.export(plain).split("\r\n")[1]
-        assertEquals("7,Alice,2026-07-10T10:15:00Z,received,3,true,no special chars here", row)
+        assertEquals("7,sms,Alice,2026-07-10T10:15:00Z,received,3,true,no special chars here", row)
+    }
+
+    @Test
+    fun `mms rows are marked in the kind column`() {
+        val mms = listOf(
+            Message(
+                id = 9,
+                address = "732",
+                body = "note that never sent",
+                date = 1_783_678_500_000L,
+                type = MessageType.OUTBOX,
+                threadId = 4,
+                read = true,
+                isMms = true,
+            ),
+        )
+        val row = exporter.export(mms).split("\r\n")[1]
+        assertEquals("9,mms,732,2026-07-10T10:15:00Z,outbox,4,true,note that never sent", row)
     }
 
     @Test

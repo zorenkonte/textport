@@ -268,7 +268,7 @@ private fun ConversationDetailView(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        items(conversation.messages, key = { it.id }) { message ->
+        items(conversation.messages, key = { it.stableKey }) { message ->
             MessageBubble(message)
         }
     }
@@ -307,11 +307,12 @@ private fun MessageBubble(message: Message) {
             Column(modifier = Modifier.padding(10.dp)) {
                 Text(text = message.body, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(4.dp))
+                val kindTag = if (message.isMms) "MMS · " else ""
                 val stamp = if (message.type == MessageType.RECEIVED || message.type == MessageType.SENT) {
-                    formatDate(message.date)
+                    "$kindTag${formatDate(message.date)}"
                 } else {
                     // Surface the box (failed/queued/outbox/draft) for outgoing notes.
-                    "${message.type.label} · ${formatDate(message.date)}"
+                    "$kindTag${message.type.label} · ${formatDate(message.date)}"
                 }
                 Text(
                     text = stamp,
