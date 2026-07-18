@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,11 +38,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.textport.data.export.ExportFormat
 import com.example.textport.data.model.Conversation
 import com.example.textport.data.model.Message
 import com.example.textport.data.model.MessageType
+import com.example.textport.util.DefaultSmsApp
 import com.example.textport.util.Permissions
 import java.time.Instant
 import java.time.ZoneId
@@ -81,6 +86,31 @@ fun MainScreen(viewModel: MainViewModel) {
         createDocumentLauncher.launch(state.format.suggestedFileName(todayDatePart(), label))
     }
 
+    // Prompt to become the default SMS app; on return, refresh status and, if we
+    // are now default, reload so the newly-visible failed messages appear.
+    val roleLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) {
+        val nowDefault = DefaultSmsApp.isDefault(context)
+        viewModel.setDefaultSmsStatus(nowDefault)
+        if (nowDefault && Permissions.hasReadSms(context)) {
+            viewModel.loadMessages()
+        }
+    }
+
+    // Keep the default-app status fresh — the user may change it in system
+    // settings and return to Textport.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.setDefaultSmsStatus(DefaultSmsApp.isDefault(context))
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // Hardware back returns to the list rather than leaving the app.
     BackHandler(enabled = selected != null) { viewModel.closeConversation() }
 
@@ -117,6 +147,8 @@ fun MainScreen(viewModel: MainViewModel) {
                     onSelectFormat = viewModel::selectFormat,
                     onExportAll = { launchExport(threadId = null, label = null) },
                     onOpenConversation = viewModel::openConversation,
+                    onSetDefaultSmsApp = { roleLauncher.launch(DefaultSmsApp.requestIntent(context)) },
+                    onRestoreDefaultSmsApp = { context.startActivity(DefaultSmsApp.restoreDefaultsIntent()) },
                 )
             } else {
                 ConversationDetailView(
@@ -139,6 +171,8 @@ private fun ConversationListView(
     onSelectFormat: (ExportFormat) -> Unit,
     onExportAll: () -> Unit,
     onOpenConversation: (Long) -> Unit,
+    onSetDefaultSmsApp: () -> Unit,
+    onRestoreDefaultSmsApp: () -> Unit,
 ) {
     Text(
         text = "Back up the SMS messages stored on this device to a file you save yourself.",
@@ -172,6 +206,14 @@ private fun ConversationListView(
 
     StatusLine(state)
 
+    Spacer(Modifier.height(12.dp))
+
+    DefaultSmsAppCard(
+        isDefault = state.isDefaultSmsApp,
+        onSetDefault = onSetDefaultSmsApp,
+        onRestoreDefault = onRestoreDefaultSmsApp,
+    )
+
     Spacer(Modifier.height(8.dp))
 
     if (state.hasLoaded && state.conversations.isEmpty()) {
@@ -188,6 +230,54 @@ private fun ConversationListView(
     ) {
         items(state.conversations, key = { it.threadId }) { conversation ->
             ConversationRow(conversation, onClick = { onOpenConversation(conversation.threadId) })
+        }
+    }
+}
+
+/**
+ * Explains and drives the temporary default-SMS-app flow used to reach failed /
+ * unsent SMS the system hides from non-default apps.
+ */
+@Composable
+private fun DefaultSmsAppCard(
+    isDefault: Boolean,
+    onSetDefault: () -> Unit,
+    onRestoreDefault: () -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("Read failed / unsent SMS", style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Some failed or unsent texts (like notes to a number that can't " +
+                    "receive them) are only visible to the device's default SMS app. To " +
+                    "include them, set Textport as default, tap Load, then switch back.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "While Textport is default it saves incoming texts to your inbox but " +
+                    "won't notify you, and incoming MMS won't be saved. Switch back to your " +
+                    "usual app as soon as you've loaded your messages.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            Spacer(Modifier.height(10.dp))
+            if (isDefault) {
+                Text(
+                    text = "Textport is currently your default SMS app.",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.height(6.dp))
+                Button(onClick = onRestoreDefault, modifier = Modifier.fillMaxWidth()) {
+                    Text("Switch back to your SMS app")
+                }
+            } else {
+                OutlinedButton(onClick = onSetDefault, modifier = Modifier.fillMaxWidth()) {
+                    Text("Set Textport as default SMS app")
+                }
+            }
         }
     }
 }

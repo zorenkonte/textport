@@ -26,6 +26,7 @@ data class UiState(
     val isLoading: Boolean = false,
     val isExporting: Boolean = false,
     val hasLoaded: Boolean = false,
+    val isDefaultSmsApp: Boolean = false,
     val status: String? = null,
     val error: String? = null,
 ) {
@@ -47,6 +48,11 @@ class MainViewModel(
 
     fun selectFormat(format: ExportFormat) {
         _uiState.update { it.copy(format = format) }
+    }
+
+    /** Records whether Textport currently holds the default-SMS role. */
+    fun setDefaultSmsStatus(isDefault: Boolean) {
+        _uiState.update { it.copy(isDefaultSmsApp = isDefault) }
     }
 
     /** Opens a conversation's detail view. */

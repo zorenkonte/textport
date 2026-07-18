@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Required to read SMS from the system content provider. -->
+    <!-- Required to read SMS/MMS from the system content providers. -->
     <uses-permission android:name="android.permission.READ_SMS" />
+
+    <!--
+      Declared so Textport can become the default SMS app *temporarily* to read
+      failed/unsent SMS that the system only exposes to the default handler.
+      While default, Textport persists incoming SMS to the inbox so nothing is
+      lost; it is not a full messenger. See the README.
+    -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" />
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
 
     <!-- Reading stored SMS doesn't require the device to have telephony hardware. -->
     <uses-feature
@@ -27,6 +38,70 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+          The four components below are what Android requires before it will
+          offer an app as a default SMS handler. Textport only uses the role to
+          read otherwise-hidden failed SMS; the compose/quick-reply pieces are
+          minimal, and the SMS receiver persists incoming texts to the inbox.
+        -->
+
+        <!-- Receives incoming SMS while Textport is the default app. -->
+        <receiver
+            android:name=".smsrole.SmsDeliverReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_DELIVER" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Receives incoming MMS (WAP push) while default. Minimal by design. -->
+        <receiver
+            android:name=".smsrole.MmsWapPushReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_WAP_PUSH">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+                <data android:mimeType="application/vnd.wap.mms-message" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Compose target (required for eligibility); Textport isn't a messenger. -->
+        <activity
+            android:name=".smsrole.ComposeRedirectActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Textport">
+            <intent-filter>
+                <action android:name="android.intent.action.SENDTO" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+                <data android:scheme="mms" />
+                <data android:scheme="mmsto" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- Quick-reply "respond via message" service (required for eligibility). -->
+        <service
+            android:name=".smsrole.HeadlessSmsSendService"
+            android:exported="true"
+            android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+                <data android:scheme="mms" />
+                <data android:scheme="mmsto" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
