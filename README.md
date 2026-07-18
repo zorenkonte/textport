@@ -84,6 +84,27 @@ On first load, Textport requests the `READ_SMS` permission. If you deny it (or
 disable it later in **Settings → Apps → Textport → Permissions**), the app shows
 a clear message and reads nothing. Grant it and tap **Load messages** again.
 
+### Reading failed / unsent messages (temporary default-SMS-app mode)
+
+Some **failed or unsent** texts — for example a note sent to a number that can't
+receive it — are only visible to the device's **default SMS app**. A normal
+read-only app can't see them, no matter its permissions. To include these:
+
+1. On the main screen, in **"Read failed / unsent SMS"**, tap **Set Textport as
+   default SMS app** and confirm the system dialog.
+2. Tap **Load messages** — the previously hidden failed messages now appear (the
+   status line's per-type breakdown will show a `failed`/`outbox` count).
+3. Export as usual.
+4. Tap **Switch back to your SMS app** and re-select your normal messaging app.
+
+**Important, please read:** while Textport is your default SMS app it is *not* a
+full messenger. It **saves incoming SMS to your inbox** so nothing is lost, but
+it does **not** show notifications for them, and **incoming MMS during this
+window is not downloaded/saved**. Hold the role only as long as it takes to load
+and export, then switch back. Android does not let an app hand the default role
+to another app, so the switch-back is a manual step (Textport opens the right
+settings screen for you). This is another reason Textport is **sideload-only**.
+
 ## Scope
 
 **SMS and MMS.** Textport reads text messages from both the SMS and MMS
@@ -96,7 +117,9 @@ send). It does **not** read:
   If RCS is on, an unsent message you typed may be held in the messaging app's
   private RCS store rather than the SMS/MMS providers, in which case no
   third-party app (including Textport) can read it. A message that failed to
-  send over SMS/MMS lands in the telephony providers and is captured.
+  send over SMS *is* in the telephony provider, but the system only reveals it
+  to the default SMS app — see [Reading failed / unsent
+  messages](#reading-failed--unsent-messages-temporary-default-sms-app-mode).
 - **iMessage / other chat apps** — not on Android.
 
 **iOS is intentionally out of scope:** Apple provides no API for apps to read the
