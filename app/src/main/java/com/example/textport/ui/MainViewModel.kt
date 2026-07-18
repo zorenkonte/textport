@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.textport.data.SmsRepository
+import com.example.textport.data.MessageRepository
 import com.example.textport.data.export.ExportFormat
 import com.example.textport.data.model.Conversation
 import com.example.textport.data.model.Message
@@ -39,7 +39,7 @@ data class UiState(
  * work happens on background dispatchers via the repository / IO.
  */
 class MainViewModel(
-    private val repository: SmsRepository,
+    private val repository: MessageRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiState())
@@ -176,8 +176,8 @@ class MainViewModel(
                 "$conversationCount conversation$convPlural ($breakdown)"
         }
 
-        /** Factory that wires the [SmsRepository] into the ViewModel. */
-        fun factory(repository: SmsRepository): ViewModelProvider.Factory =
+        /** Factory that wires the [MessageRepository] into the ViewModel. */
+        fun factory(repository: MessageRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =

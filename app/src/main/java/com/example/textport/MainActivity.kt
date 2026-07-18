@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.example.textport.data.SmsRepository
+import com.example.textport.data.MessageRepository
 import com.example.textport.ui.MainScreen
 import com.example.textport.ui.MainViewModel
 import com.example.textport.ui.theme.TextportTheme
@@ -17,7 +17,7 @@ import com.example.textport.ui.theme.TextportTheme
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels {
-        MainViewModel.factory(SmsRepository(applicationContext))
+        MainViewModel.factory(MessageRepository(applicationContext))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

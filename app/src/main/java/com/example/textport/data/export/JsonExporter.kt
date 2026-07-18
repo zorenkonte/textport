@@ -19,6 +19,7 @@ class JsonExporter(
         for (m in messages) {
             val obj = JSONObject()
             obj.put("id", m.id)
+            obj.put("kind", if (m.isMms) "mms" else "sms")
             obj.put("address", m.address)
             obj.put("date", isoTimestamp(m.date))
             obj.put("type", m.type.label)
